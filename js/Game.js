@@ -206,12 +206,14 @@ function createWaterfall(x, y, width, maxParticles) {
     // leftWaterfall.setRotation(-100, 100);  
     // waterfall.gravity.y = 0;
 
-    // leftWaterfall.minParticleScale = 0.5;
+    waterfall.minParticleScale = 0.5;
+    waterfall.maxParticleScale = 1.5;
+    //leftWaterfall.minParticleScale = 0.5;
     // leftWaterfall.maxParticleScale = 0.5;
 
     waterfall.setXSpeed(0, 0);  
     waterfall.setYSpeed(60, 100);
-    waterfall.start(false, 5000, 1, false);
+    waterfall.start(false, 5000, .2, false);
     return waterfall;
 }
 
