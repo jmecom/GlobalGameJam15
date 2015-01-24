@@ -275,7 +275,7 @@ function createFire(x, y, width, maxParticles) {
     fire.gravity.y = -20;
 
     fire.minParticleScale = 0.75;
-    fire.maxParticleScale = 2;
+    fire.maxParticleScale = 1.5;
 
     fire.setXSpeed(-5, 5);  
     fire.setYSpeed(-100, -50);
