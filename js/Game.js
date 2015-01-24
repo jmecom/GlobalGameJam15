@@ -1,4 +1,5 @@
-var game = new Phaser.Game(800, 480, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+var game = new Phaser.Game(800, 480, Phaser.AUTO, 'body', { preload: preload, create: create, update: update });
+
 var player;
 var platforms;
 
@@ -61,6 +62,7 @@ function preload() {
     dirtGrassTextures.push('grassdirt1');
     dirtGrassTextures.push('grassdirt2');
     dirtGrassTextures.push('grassdirt3');   
+
 }
  
 
