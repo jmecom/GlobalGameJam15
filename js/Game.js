@@ -190,6 +190,7 @@ function updateLine() {
 	        mouseWasDown = true;
         } else {	
  		    bmd.ctx.lineTo(game.input.x, game.input.y);
+ 		    
 	        bmd.ctx.lineWidth = 2;
 	        bmd.ctx.stroke();
 	        bmd.dirty = true;
