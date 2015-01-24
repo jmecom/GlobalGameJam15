@@ -6,6 +6,8 @@ var platforms;
 var waterfalls;
 var fires;
 
+var waterFireCount = 0;
+
 
 // Direction the girl is facing
 var direction = 'left';
@@ -99,7 +101,7 @@ function create() {
     // Player physics properties. Give the little guy a slight bounce.
     player.body.bounce.y = 0.2;
     player.body.gravity.y = 800;
-    player.body.collideWorldBounds = true;
+    //player.body.collideWorldBounds = true;
 
     // Our two animations, walking left and right.
     player.animations.add('left', [0, 1, 2, 3], 8, true);
@@ -123,7 +125,7 @@ function create() {
     // waterfalls.add(createWaterfall(504, 0, 140, 400));
 
     // Fire particle emitters 
-    fires.add(createFire(656, 288, 32, 100));
+    fires.add(createFire(665, 288, 32, 100));
     fires.add(createFire(688, 288, 32, 100));    
 }
  
@@ -131,24 +133,35 @@ function create() {
 function update() {
 
 	game.physics.arcade.collide(player, platforms);
+
 	cursors = game.input.keyboard.createCursorKeys();
 
     // Reset the players velocity (movement)
     player.body.velocity.x = 0;
 
     if (cursors.left.isDown) {
-        // Move to the left
-        player.body.velocity.x = -150;
-        player.animations.play('left');
-        direction = 'left';	
+        // Check if player is in world bounds
+        if(player.x >= 0) {
+            // Move to the left
+            player.body.velocity.x = -150;
+            player.animations.play('left');
+            direction = 'left'; 
+        }  
     } else if (cursors.right.isDown) {
-        // Move to the right
-        player.body.velocity.x = 150;
-        player.animations.play('right');
-        direction = 'right';
+        // Check if player is in world bounds
+        if(player.x <= game.world.width - 2*player.body.halfWidth) {
+            // Move to the right
+            player.body.velocity.x = 150;
+            player.animations.play('right');
+            direction = 'right';
+        }
     } else {
         // Stand still
         player.animations.stop();
+
+        if(player.y < 0) {
+            player.kill();
+        }
 
         if(direction == 'left') {
         	player.frame = 4;
@@ -160,13 +173,50 @@ function update() {
     
     // Allow the player to jump if they are touching the ground.
     if (cursors.up.isDown && player.body.touching.down) {
-        player.body.velocity.y = -350;
+        player.body.velocity.y = -330;
     }
+
+    waterfalls.forEach(function(waterfall) {
+        game.physics.arcade.collide(player, waterfall, playerWaterCollision);
+        game.physics.arcade.collide(waterfall, platforms, waterPlatformCollision, null, this);
+    }, this);
+
+
+    waterfalls.forEach(function(waterfall) {
+        fires.forEach(function(fire) {
+             game.physics.arcade.collide(waterfall, fire, fireWaterCollision, null, this);
+        }, this);
+    }, this);
+
+    //game.physics.arcade.collide(leftEmitter, rightEmitter, change, null, this);
     
     updateLine();
     updateWaterfalls();    
 }
 
+function waterPlatformCollision(waterfall, platform) {
+    if(waterfall.x - platform.x <= 16) {
+        waterfall.body.velocity.x = -20;
+    } else {
+        waterfall.body.velocity.x = 20;
+    }
+
+}
+
+function playerWaterCollision(player, group) {
+    player.body.velocity.x = 0;
+}
+
+function fireWaterCollision(waterfall, fire) {
+    waterfall.kill();
+    fire.kill();
+
+    waterFireCount++;
+
+    if(waterFireCount > 20) {
+        fires.destroy();
+    }
+}
 
 function updateLine() {     
     if (game.input.mousePointer.isDown) {
@@ -206,8 +256,8 @@ function createWaterfall(x, y, width, maxParticles) {
     // leftWaterfall.setRotation(-100, 100);  
     // waterfall.gravity.y = 0;
 
-    waterfall.minParticleScale = 0.5;
-    waterfall.maxParticleScale = 1.5;
+    waterfall.minParticleScale = 0.75;
+    waterfall.maxParticleScale = 2;
     //leftWaterfall.minParticleScale = 0.5;
     // leftWaterfall.maxParticleScale = 0.5;
 
@@ -223,6 +273,9 @@ function createFire(x, y, width, maxParticles) {
     fire.width = width;
     fire.makeParticles('fire');
     fire.gravity.y = -20;
+
+    fire.minParticleScale = 0.75;
+    fire.maxParticleScale = 2;
 
     fire.setXSpeed(-5, 5);  
     fire.setYSpeed(-100, -50);
