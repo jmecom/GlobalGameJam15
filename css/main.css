@@ -1,10 +1,12 @@
 body {
-    background-color: #333;
-    margin:auto;
-   
+    background: #333;
+    width: 800px;
+    margin: auto;
+
+    position: relative;
+    top: 50%;
+    /*-webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);*/
 }
 
-.game {
-	
-	margin:auto;
-}
