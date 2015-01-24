@@ -1,6 +1,7 @@
-var game = new Phaser.Game(800, 480, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
+var game = new Phaser.Game(800, 480, Phaser.AUTO, '', { preload: preload, create: create, update: update });
 var player;
 var platforms;
+var waterfalls;
 
 
 // Variables for line drawing
@@ -12,13 +13,46 @@ var linePath = null;
 var linePathIndex = -1;
 var linePathSpriteIndex = -1;
 
+var bmd;
+
+var count;
+
+document.addEventListener('mousedown', onDocumentMouseDown, false);
+// setInterval(function () {updateWaterfalls()}, 3000);
+
 // Indices for level one's platforms   
-var levelOnePlatforms = [{x:0, y:14, width:7, height:2}, {x:9, y:13, width:2, height:1}, {x:13, y:13, width:2, height:1}, {x:16, y:14, width:2, height:1}, {x:19, y:14, width:7, height:2}, {x:20, y:9, width:2, height:1}, {x:23, y:11, width:2, height:1}, {x:23, y:7, width:2, height:1}];
+var levelOnePlatforms = [{x:0, y:13, width:7, height:2}, {x:9, y:13, width:2, height:1}, {x:13, y:13, width:2, height:1}, {x:16, y:14, width:2, height:1}, {x:19, y:13, width:7, height:2}, {x:20, y:9, width:2, height:1}, {x:23, y:11, width:2, height:1}, {x:23, y:7, width:2, height:1}, {x:0, y:0, width:1, height:1}];
+
+
+// // 0 = blank
+// // 1 = platform top
+// // 2 = platform bottom
+// var levelOnePlatform =
+// [	 
+// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+// 	[1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1],
+// 	[2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2]
+// ];
+ 
 
 function preload() {
+	game.load.image('tile', 'assets/images/grassdirt1.png');
 	game.load.image('sky', 'assets/images/sky.png');
     game.load.image('ground', 'assets/images/platform.png');
     game.load.image('star', 'assets/images/star.png');
+    game.load.image('waterDroplet', 'assets/images/waterDroplet.png');
     game.load.spritesheet('dude', 'assets/images/dude.png', 32, 48);
     
     for (var i = 0; i < levelOnePlatforms.length; i++) {
@@ -35,12 +69,15 @@ function create() {
 
     platforms = game.add.group();
     platforms.enableBody = true;
+
+    waterfalls = game.add.group();
+    // waterfall physics?
    
     // Place platforms for the level
     for (var i = 0; i < levelOnePlatforms.length; i++) {
     	var platform = levelOnePlatforms[i];
-    	var ledge = platforms.create(platform.x, platform.y, 'ground');
-        ledge.scale.setTo(.1, .1);
+    	var ledge = platforms.create(platform.x, platform.y, 'tile');
+        ledge.scale.setTo(platform.width, platform.height);
         ledge.body.immovable = true;
     }
      
@@ -50,7 +87,7 @@ function create() {
 
     // Player physics properties. Give the little guy a slight bounce.
     player.body.bounce.y = 0.2;
-    player.body.gravity.y = 300;
+    player.body.gravity.y = 800;
     player.body.collideWorldBounds = true;
 
     // Our two animations, walking left and right.
@@ -61,16 +98,28 @@ function create() {
     line = game.add.group();
     line.enableBody = true;
     lineGraphic = game.add.graphics(0, 0);
-    // blackoutGraphic();
     lineSprite = game.add.sprite(100, 100, 'star');
     lineSprite.anchor.setTo(0.5, 0.5);
     lineGraphic.lineStyle(4, 0xFF0000, 1); 
     game.physics.enable(lineSprite, Phaser.Physics.ARCADE);
     
+
+    bmd = game.add.bitmapData(800, 480);
+    bmdLineSprite = game.add.sprite(0, 0, bmd); 
+
+    bmd.ctx.beginPath();
+    bmd.ctx.strokeStyle += "white";
+
+    // left waterfall, using layers for multiple particles
+    waterfalls.add(createWaterfall(304, 32, 160, 400));	
+    waterfalls.add(createWaterfall(304, 32, 160, 400));
+    waterfalls.add(createWaterfall(304, 32, 160, 400));
+
 }
  
 
 function update() {
+
 	game.physics.arcade.collide(player, platforms);
 	cursors = game.input.keyboard.createCursorKeys();
 
@@ -97,52 +146,70 @@ function update() {
     }
     
     updateLine();
+    updateWaterfalls();    
 }
 
 
-// Update the player's line
-function updateLine() {
-    // Draw a line at current mouse location
+function updateLine() {     
     if (game.input.mousePointer.isDown) {
-      if (!mouseWasDown) {
-        lineGraphic.moveTo(game.input.x, game.input.y);
-        
-        lineGraphic.alpha = 0;     // Make the previous line invisible
-        line = game.add.group();   // And draw the new line
-    	line.enableBody = true;
-    	lineGraphic = game.add.graphics(0, 0);
-    	lineGraphic.lineStyle(4, 0xFF0000, 1); 
+    	if(!mouseWasDown) {
+    		
+    		bmd.clear();
+    		// bmd.update(0, 0, 800, 480);
 
-        linePathIndex = 0;
-        linePathSpriteIndex = 0;
-        linePath = [];
-        mouseWasDown = true;
-      }
+    		bmd = game.add.bitmapData(800, 480);
+   		    bmdLineSprite = game.add.sprite(0, 0, bmd); 
 
-      if (linePathIndex == 0 || (linePath[linePathIndex - 1].x != game.input.x || linePath[linePathIndex - 1].y != game.input.y)) {
-        lineGraphic.lineTo(game.input.x, game.input.y);
-        linePath[linePathIndex] = new Phaser.Point(game.input.x, game.input.y);
-        linePathIndex++;
-      }
+    		bmd.ctx.beginPath();
+    	    bmd.ctx.strokeStyle = "white";
 
-    } else {
-      mouseWasDown = false;
-    }
-
-    if (linePath != null && linePath.length > 0 && linePathSpriteIndex < linePathIndex) {
-      linePathSpriteIndex = Math.min(linePathSpriteIndex, linePath.length - 1);
-      game.physics.arcade.moveToXY(lineSprite, linePath[linePathSpriteIndex].x, linePath[linePathSpriteIndex].y, 250);
-      if (game.physics.arcade.distanceToXY(lineSprite, linePath[linePathSpriteIndex].x, linePath[linePathSpriteIndex].y) < 20) {
-        linePathSpriteIndex++;
-        if (linePathSpriteIndex >= linePathIndex) {
-          lineSprite.body.velocity.setTo(0, 0);
+	        bmd.ctx.lineTo(game.input.x, game.input.y);
+	        bmd.ctx.lineWidth = 2;
+	        bmd.ctx.stroke();
+	        bmd.dirty = true;
+	        mouseWasDown = true;
+        } else {	
+ 		    bmd.ctx.lineTo(game.input.x, game.input.y);
+	        bmd.ctx.lineWidth = 2;
+	        bmd.ctx.stroke();
+	        bmd.dirty = true;
         }
-      }
-    }     
+    }  
+    bmd.render();
 }
 
+
+function createWaterfall(x, y, width, maxParticles) {
+    var waterfall = game.add.emitter(x, y, 1);
+    waterfall.width = width;
+    // leftWaterfall.height = 448;
+    waterfall.makeParticles('waterDroplet');
+    // leftWaterfall.setRotation(-100, 100);  
+    waterfall.gravity.y = 50;
+
+    // leftWaterfall.minParticleScale = 0.5;
+    // leftWaterfall.maxParticleScale = 0.5;
+
+    waterfall.setXSpeed(0, 0);  
+    waterfall.setYSpeed(10, 10);
+    waterfall.start(false, 0, 1, false);
+    return waterfall;
+}
+
+function updateWaterfalls() {
+	waterfalls.forEach(function(waterfall) {
+    	waterfall.makeParticles('waterDroplet', 1);
+    }, this);
+}
+
+
+
+function onDocumentMouseDown(event) {
+	event.preventDefault();
+	mouseWasDown = false;
+}
 
 function convertToGameCoords(x, y, width, height) {
-    return {x:32*x, y:32*y, width:32*width, height:32*height};
+    return {x:32*x, y:32*y, width:width, height:height};
 }
 
