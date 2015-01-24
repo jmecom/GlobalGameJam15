@@ -13,6 +13,8 @@ var direction = 'left';
 
 var dirtTextures = [];
 var dirtGrassTextures = [];
+var boulderTextures = [];
+var boulderGrassTextures = [];
 
 var bmd; // line
 
@@ -21,6 +23,9 @@ document.addEventListener('mousedown', onDocumentMouseDown, false);
 // 0 = blank
 // 1 = platform top
 // 2 = platform bottom
+// 3 = boulder
+// 4 = boulder with grass
+// 5 = tree
 var levelOnePlatforms =
 [	 
 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -30,30 +35,37 @@ var levelOnePlatforms =
 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5],
 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 0, 0, 0],
 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5],
 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	[1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
-	[2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 2, 2, 2, 2, 2, 2]
+	[1, 1, 1, 1, 1, 1, 1, 0, 0, 3, 3, 0, 0, 4, 4, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+	[2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 2, 2, 2, 2, 2, 2]
 ];
  
 
 function preload() {
 	game.load.spritesheet('girl', 'assets/images/girlSprite.png', 32, 64);
-	game.load.image('fire', 'assets/images/fire.png');
+	game.load.image('boulder1', 'assets/images/boulder1.png');
+	game.load.image('boulder2', 'assets/images/boulder2.png');
+	game.load.image('boulder3', 'assets/images/boulder3.png');
+	game.load.image('grassboulder1', 'assets/images/grassboulder1.png');
+	game.load.image('grassboulder2', 'assets/images/grassboulder2.png');
+	game.load.image('grassboulder3', 'assets/images/grassboulder3.png');
 	game.load.image('grassdirt1', 'assets/images/grassdirt1.png');
 	game.load.image('grassdirt2', 'assets/images/grassdirt2.png');
 	game.load.image('grassdirt3', 'assets/images/grassdirt3.png');
 	game.load.image('dirt1', 'assets/images/dirt1.png');
 	game.load.image('dirt2', 'assets/images/dirt2.png');
 	game.load.image('dirt3', 'assets/images/dirt3.png');
+	game.load.image('tree1', 'assets/images/tree1.png');
 	game.load.image('bg', 'assets/images/bg.png');
     game.load.image('ground', 'assets/images/platform.png');
     game.load.image('star', 'assets/images/star.png');
     game.load.image('waterDroplet', 'assets/images/waterDroplet.png');
+    game.load.image('fire', 'assets/images/fireParticle.png');
     //game.load.spritesheet('dude', 'assets/images/dude.png', 32, 64);
 
     dirtTextures.push('dirt1');
@@ -61,7 +73,14 @@ function preload() {
     dirtTextures.push('dirt3');
     dirtGrassTextures.push('grassdirt1');
     dirtGrassTextures.push('grassdirt2');
-    dirtGrassTextures.push('grassdirt3');   
+    dirtGrassTextures.push('grassdirt3');
+    boulderTextures.push('boulder1');
+    boulderTextures.push('boulder2');
+    boulderTextures.push('boulder3');
+    boulderGrassTextures.push('grassboulder1');
+    boulderGrassTextures.push('grassboulder2');
+    boulderGrassTextures.push('grassboulder3');
+  
 
 }
  
@@ -83,14 +102,28 @@ function create() {
             // Top level
             if (levelOnePlatforms[row][col] == 1) {
             	var texture = pickRandTexture(dirtGrassTextures);
-                var ledge = platforms.create(col*32, row*32, texture);
-                ledge.body.immovable = true;    
+                var platform = platforms.create(col*32, row*32, texture);
+                platform.body.immovable = true;    
             // Bottom level      
             } else if (levelOnePlatforms[row][col] == 2) {
             	var texture = pickRandTexture(dirtTextures);
-                var ledge = platforms.create(col*32, row*32, texture);
-                ledge.body.immovable = true;    
-            } 
+                var platform = platforms.create(col*32, row*32, texture);
+                platform.body.immovable = true;    
+            // Boulders
+            } else if (levelOnePlatforms[row][col] == 3) {
+            	var texture = pickRandTexture(boulderTextures);
+                var platform = platforms.create(col*32, row*32, texture);
+                platform.body.immovable = true;
+            // Boulders with grass
+            } else if (levelOnePlatforms[row][col] == 4) {
+            	var texture = pickRandTexture(boulderGrassTextures);
+                var platform = platforms.create(col*32, row*32, texture);
+                platform.body.immovable = true;
+            // Tree
+            } else if (levelOnePlatforms[row][col] == 5) {
+                var platform = platforms.create(col*32, row*32, 'tree1');
+                platform.body.immovable = true;
+            }
         }
     }
 
@@ -131,7 +164,6 @@ function create() {
  
 
 function update() {
-
 	game.physics.arcade.collide(player, platforms);
 	cursors = game.input.keyboard.createCursorKeys();
 
@@ -166,7 +198,8 @@ function update() {
     }
     
     updateLine();
-    updateWaterfalls();    
+    updateWaterfalls();  
+    // updateFires();  
 }
 
 
@@ -190,7 +223,7 @@ function updateLine() {
 	        mouseWasDown = true;
         } else {	
  		    bmd.ctx.lineTo(game.input.x, game.input.y);
- 		    
+
 	        bmd.ctx.lineWidth = 2;
 	        bmd.ctx.stroke();
 	        bmd.dirty = true;
@@ -204,13 +237,7 @@ function createWaterfall(x, y, width, maxParticles) {
     var waterfall = game.add.emitter(x, y, 1);
     waterfall.width = width;
     waterfall.gravity = 20;
-    // leftWaterfall.height = 448;
     waterfall.makeParticles('waterDroplet');
-    // leftWaterfall.setRotation(-100, 100);  
-    // waterfall.gravity.y = 0;
-
-    // leftWaterfall.minParticleScale = 0.5;
-    // leftWaterfall.maxParticleScale = 0.5;
 
     waterfall.setXSpeed(0, 0);  
     waterfall.setYSpeed(60, 100);
@@ -222,7 +249,7 @@ function createWaterfall(x, y, width, maxParticles) {
 function createFire(x, y, width, maxParticles) {
     var fire = game.add.emitter(x, y, 100);
     fire.width = width;
-    fire.makeParticles('fire');
+    fire.makeParticles('fire', [0, 1, 2]);
     fire.gravity.y = -20;
 
     fire.setXSpeed(-5, 5);  
@@ -240,7 +267,9 @@ function updateWaterfalls() {
 
 function updateFires() {
 	fires.forEach(function(fire) {
-    	fire.makeParticles('fire', 100);
+		var texture = pickRandTexture(fireTextures);
+		console.log(texture);
+    	fire.makeParticles(texture, 100);
     }, this);
 }
 
@@ -253,6 +282,39 @@ function onDocumentMouseDown(event) {
 
 function pickRandTexture(textures) {
     return textures[Math.floor(Math.random()*textures.length)];
+}
+
+function calcStraightLine (startCoordinates, endCoordinates) {
+    var coordinatesArray = new Array();
+    // Translate coordinates
+    var x1 = startCoordinates.left;
+    var y1 = startCoordinates.top;
+    var x2 = endCoordinates.left;
+    var y2 = endCoordinates.top;
+    // Define differences and error check
+    var dx = Math.abs(x2 - x1);
+    var dy = Math.abs(y2 - y1);
+    var sx = (x1 < x2) ? 1 : -1;
+    var sy = (y1 < y2) ? 1 : -1;
+    var err = dx - dy;
+    // Set first coordinates
+    coordinatesArray.push(new Coordinates(y1, x1));
+    // Main loop
+    while (!((x1 == x2) && (y1 == y2))) {
+      var e2 = err << 1;
+      if (e2 > -dy) {
+        err -= dy;
+        x1 += sx;
+      }
+      if (e2 < dx) {
+        err += dx;
+        y1 += sy;
+      }
+      // Set coordinates
+      coordinatesArray.push(new Coordinates(y1, x1));
+    }
+    // Return the result
+    return coordinatesArray;
 }
 
 // function convertToGameCoords(x, y, width, height) {
