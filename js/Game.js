@@ -1,9 +1,9 @@
-var game = new Phaser.Game(800, 600, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
+var game = new Phaser.Game(800, 480, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
 var player;
 var platforms;
 
 
-//Variables for line drawing
+// Variables for line drawing
 var line = null;
 var lineSprite = null;
 var lineGraphic = null;
@@ -12,12 +12,19 @@ var linePath = null;
 var linePathIndex = -1;
 var linePathSpriteIndex = -1;
 
+// Indices for level one's platforms   
+var levelOnePlatforms = [{x:0, y:14, width:7, height:2}, {x:9, y:13, width:2, height:1}, {x:13, y:13, width:2, height:1}, {x:16, y:14, width:2, height:1}, {x:19, y:14, width:7, height:2}, {x:20, y:9, width:2, height:1}, {x:23, y:11, width:2, height:1}, {x:23, y:7, width:2, height:1}];
 
 function preload() {
 	game.load.image('sky', 'assets/images/sky.png');
     game.load.image('ground', 'assets/images/platform.png');
     game.load.image('star', 'assets/images/star.png');
     game.load.spritesheet('dude', 'assets/images/dude.png', 32, 48);
+    
+    for (var i = 0; i < levelOnePlatforms.length; i++) {
+    	var platform = levelOnePlatforms[i];
+    	levelOnePlatforms[i] = convertToGameCoords(platform.x, platform.y, platform.width, platform.height);
+    }
 }
  
 
@@ -28,18 +35,15 @@ function create() {
 
     platforms = game.add.group();
     platforms.enableBody = true;
-
-    var ground = platforms.create(0, game.world.height - 64, 'ground');
-    // Scale it to fit the width of the game (the original sprite is 400x32 in size)
-    ground.scale.setTo(2, 2);
-    // This stops it from falling away when you jump on it
-    ground.body.immovable = true;
-
-    var ledge = platforms.create(400, 400, 'ground');
-    ledge.body.immovable = true;
-    ledge = platforms.create(-150, 250, 'ground');
-    ledge.body.immovable = true;
-
+   
+    // Place platforms for the level
+    for (var i = 0; i < levelOnePlatforms.length; i++) {
+    	var platform = levelOnePlatforms[i];
+    	var ledge = platforms.create(platform.x, platform.y, 'ground');
+        ledge.scale.setTo(.1, .1);
+        ledge.body.immovable = true;
+    }
+     
     // The player and its settings
     player = game.add.sprite(32, game.world.height - 150, 'dude');
     game.physics.arcade.enable(player);
@@ -62,12 +66,6 @@ function create() {
     lineSprite.anchor.setTo(0.5, 0.5);
     lineGraphic.lineStyle(4, 0xFF0000, 1); 
     game.physics.enable(lineSprite, Phaser.Physics.ARCADE);
-
-    // graphic = game.add.graphics(0, 0);
-    // blackoutGraphic();
-    // sprite = game.add.sprite(100, 100, 'star');
-    // sprite.anchor.setTo(0.5, 0.5); 
-    // game.physics.enable(sprite, Phaser.Physics.ARCADE);
     
 }
  
@@ -98,16 +96,19 @@ function update() {
         player.body.velocity.y = -350;
     }
     
+    updateLine();
+}
+
+
+// Update the player's line
+function updateLine() {
     // Draw a line at current mouse location
     if (game.input.mousePointer.isDown) {
       if (!mouseWasDown) {
         lineGraphic.moveTo(game.input.x, game.input.y);
-        // blackoutGraphic();   // fixme     
-        // console.log(line);
-        // line.destroy();
         
-        lineGraphic.alpha = 0;
-        line = game.add.group();
+        lineGraphic.alpha = 0;     // Make the previous line invisible
+        line = game.add.group();   // And draw the new line
     	line.enableBody = true;
     	lineGraphic = game.add.graphics(0, 0);
     	lineGraphic.lineStyle(4, 0xFF0000, 1); 
@@ -141,28 +142,7 @@ function update() {
 }
 
 
-function blackoutGraphic() {
-    lineGraphic.beginFill(0x000000);
-    lineGraphic.lineStyle(4, 0x000000, 1);
-    lineGraphic.drawRect(0, 0, game.width, game.height);
-    lineGraphic.endFill();
-    lineGraphic.lineStyle(4, 0xFF0000, 1);
+function convertToGameCoords(x, y, width, height) {
+    return {x:32*x, y:32*y, width:32*width, height:32*height};
 }
-
- // function blackoutGraphic() {
- //    graphic.beginFill(0x000000);
- //    graphic.lineStyle(4, 0x000000, 1);
- //    graphic.drawRect(0, 0, game.width, game.height);
- //    graphic.endFill();
- //    graphic.lineStyle(4, 0xFF0000, 1);
- //  }
-
-
-
-
-
-
-
-
-
 
