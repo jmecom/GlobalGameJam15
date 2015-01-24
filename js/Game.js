@@ -1,88 +1,99 @@
 var game = new Phaser.Game(800, 480, Phaser.AUTO, '', { preload: preload, create: create, update: update });
 var player;
 var platforms;
+
+// Groups for particle emitters
 var waterfalls;
+var fires;
 
 
-// Variables for line drawing
-var line = null;
-var lineSprite = null;
-var lineGraphic = null;
-var mouseWasDown = false;
-var linePath = null;
-var linePathIndex = -1;
-var linePathSpriteIndex = -1;
+// Direction the girl is facing
+var direction = 'left';
 
-var bmd;
+var dirtTextures = [];
+var dirtGrassTextures = [];
 
-var count;
+var bmd; // line
 
 document.addEventListener('mousedown', onDocumentMouseDown, false);
-// setInterval(function () {updateWaterfalls()}, 3000);
 
-// Indices for level one's platforms   
-var levelOnePlatforms = [{x:0, y:13, width:7, height:2}, {x:9, y:13, width:2, height:1}, {x:13, y:13, width:2, height:1}, {x:16, y:14, width:2, height:1}, {x:19, y:13, width:7, height:2}, {x:20, y:9, width:2, height:1}, {x:23, y:11, width:2, height:1}, {x:23, y:7, width:2, height:1}, {x:0, y:0, width:1, height:1}];
-
-
-// // 0 = blank
-// // 1 = platform top
-// // 2 = platform bottom
-// var levelOnePlatform =
-// [	 
-// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
-// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
-// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
-// 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-// 	[1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1],
-// 	[2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2]
-// ];
+// 0 = blank
+// 1 = platform top
+// 2 = platform bottom
+var levelOnePlatforms =
+[	 
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	[1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+	[2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 2, 2, 2, 2, 2, 2]
+];
  
 
 function preload() {
-	game.load.image('tile', 'assets/images/grassdirt1.png');
-	game.load.image('sky', 'assets/images/sky.png');
+	game.load.spritesheet('girl', 'assets/images/girlSprite.png', 32, 64);
+	game.load.image('fire', 'assets/images/fire.png');
+	game.load.image('grassdirt1', 'assets/images/grassdirt1.png');
+	game.load.image('grassdirt2', 'assets/images/grassdirt2.png');
+	game.load.image('grassdirt3', 'assets/images/grassdirt3.png');
+	game.load.image('dirt1', 'assets/images/dirt1.png');
+	game.load.image('dirt2', 'assets/images/dirt2.png');
+	game.load.image('dirt3', 'assets/images/dirt3.png');
+	game.load.image('bg', 'assets/images/bg.png');
     game.load.image('ground', 'assets/images/platform.png');
     game.load.image('star', 'assets/images/star.png');
     game.load.image('waterDroplet', 'assets/images/waterDroplet.png');
-    game.load.spritesheet('dude', 'assets/images/dude.png', 32, 48);
-    
-    for (var i = 0; i < levelOnePlatforms.length; i++) {
-    	var platform = levelOnePlatforms[i];
-    	levelOnePlatforms[i] = convertToGameCoords(platform.x, platform.y, platform.width, platform.height);
-    }
+    //game.load.spritesheet('dude', 'assets/images/dude.png', 32, 64);
+
+    dirtTextures.push('dirt1');
+    dirtTextures.push('dirt2');
+    dirtTextures.push('dirt3');
+    dirtGrassTextures.push('grassdirt1');
+    dirtGrassTextures.push('grassdirt2');
+    dirtGrassTextures.push('grassdirt3');   
 }
  
 
 function create() {
-    game.physics.startSystem(Phaser.Physics.ARCADE); 
+    //game.physics.startSystem(Phaser.Physics.ARCADE); 
 
-    game.add.sprite(0, 0, 'sky');
+    game.add.sprite(0, 0, 'bg');
 
     platforms = game.add.group();
     platforms.enableBody = true;
 
     waterfalls = game.add.group();
     // waterfall physics?
+    fires = game.add.group();
    
-    // Place platforms for the level
-    for (var i = 0; i < levelOnePlatforms.length; i++) {
-    	var platform = levelOnePlatforms[i];
-    	var ledge = platforms.create(platform.x, platform.y, 'tile');
-        ledge.scale.setTo(platform.width, platform.height);
-        ledge.body.immovable = true;
+   for (var col = 0; col < 25; col++) {
+        for (var row = 0 ; row < 15; row++) {
+            // Top level
+            if (levelOnePlatforms[row][col] == 1) {
+            	var texture = pickRandTexture(dirtGrassTextures);
+                var ledge = platforms.create(col*32, row*32, texture);
+                ledge.body.immovable = true;    
+            // Bottom level      
+            } else if (levelOnePlatforms[row][col] == 2) {
+            	var texture = pickRandTexture(dirtTextures);
+                var ledge = platforms.create(col*32, row*32, texture);
+                ledge.body.immovable = true;    
+            } 
+        }
     }
-     
+
     // The player and its settings
-    player = game.add.sprite(32, game.world.height - 150, 'dude');
+    player = game.add.sprite(32, game.world.height - 150, 'girl');
     game.physics.arcade.enable(player);
 
     // Player physics properties. Give the little guy a slight bounce.
@@ -91,30 +102,29 @@ function create() {
     player.body.collideWorldBounds = true;
 
     // Our two animations, walking left and right.
-    player.animations.add('left', [0, 1, 2, 3], 10, true);
-    player.animations.add('right', [5, 6, 7, 8], 10, true);
-    
+    player.animations.add('left', [0, 1, 2, 3], 8, true);
+    player.animations.add('right', [5, 6, 7, 8], 8, true);
+     
     // Set up the line
-    line = game.add.group();
-    line.enableBody = true;
-    lineGraphic = game.add.graphics(0, 0);
-    lineSprite = game.add.sprite(100, 100, 'star');
-    lineSprite.anchor.setTo(0.5, 0.5);
-    lineGraphic.lineStyle(4, 0xFF0000, 1); 
-    game.physics.enable(lineSprite, Phaser.Physics.ARCADE);
-    
-
     bmd = game.add.bitmapData(800, 480);
     bmdLineSprite = game.add.sprite(0, 0, bmd); 
 
     bmd.ctx.beginPath();
     bmd.ctx.strokeStyle += "white";
 
-    // left waterfall, using layers for multiple particles
-    waterfalls.add(createWaterfall(304, 32, 160, 400));	
-    waterfalls.add(createWaterfall(304, 32, 160, 400));
-    waterfalls.add(createWaterfall(304, 32, 160, 400));
+    // Left waterfall, using layers for multiple particles
+    waterfalls.add(createWaterfall(336, 64, 160, 400));	
+    // waterfalls.add(createWaterfall(336, 0, 160, 400));
+    // waterfalls.add(createWaterfall(336, 0, 160, 400));
 
+    // Right waterfall, using layers for multiple particles
+    waterfalls.add(createWaterfall(545, 64, 128, 400));	
+    // waterfalls.add(createWaterfall(504, 0, 140, 400));
+    // waterfalls.add(createWaterfall(504, 0, 140, 400));
+
+    // Fire particle emitters 
+    fires.add(createFire(656, 288, 32, 100));
+    fires.add(createFire(688, 288, 32, 100));    
 }
  
 
@@ -130,14 +140,22 @@ function update() {
         // Move to the left
         player.body.velocity.x = -150;
         player.animations.play('left');
+        direction = 'left';	
     } else if (cursors.right.isDown) {
         // Move to the right
         player.body.velocity.x = 150;
         player.animations.play('right');
+        direction = 'right';
     } else {
         // Stand still
         player.animations.stop();
-        player.frame = 4;
+
+        if(direction == 'left') {
+        	player.frame = 4;
+        } else if(direction == 'right') {
+        	player.frame = 9;
+        }
+        
     }
     
     // Allow the player to jump if they are touching the ground.
@@ -182,19 +200,34 @@ function updateLine() {
 function createWaterfall(x, y, width, maxParticles) {
     var waterfall = game.add.emitter(x, y, 1);
     waterfall.width = width;
+    waterfall.gravity = 20;
     // leftWaterfall.height = 448;
     waterfall.makeParticles('waterDroplet');
     // leftWaterfall.setRotation(-100, 100);  
-    waterfall.gravity.y = 50;
+    // waterfall.gravity.y = 0;
 
     // leftWaterfall.minParticleScale = 0.5;
     // leftWaterfall.maxParticleScale = 0.5;
 
     waterfall.setXSpeed(0, 0);  
-    waterfall.setYSpeed(10, 10);
-    waterfall.start(false, 0, 1, false);
+    waterfall.setYSpeed(60, 100);
+    waterfall.start(false, 5000, 1, false);
     return waterfall;
 }
+
+
+function createFire(x, y, width, maxParticles) {
+    var fire = game.add.emitter(x, y, 100);
+    fire.width = width;
+    fire.makeParticles('fire');
+    fire.gravity.y = -20;
+
+    fire.setXSpeed(-5, 5);  
+    fire.setYSpeed(-100, -50);
+    fire.start(false, 500, 1, false);
+    return fire;
+}
+
 
 function updateWaterfalls() {
 	waterfalls.forEach(function(waterfall) {
@@ -202,6 +235,11 @@ function updateWaterfalls() {
     }, this);
 }
 
+function updateFires() {
+	fires.forEach(function(fire) {
+    	fire.makeParticles('fire', 100);
+    }, this);
+}
 
 
 function onDocumentMouseDown(event) {
@@ -209,7 +247,12 @@ function onDocumentMouseDown(event) {
 	mouseWasDown = false;
 }
 
-function convertToGameCoords(x, y, width, height) {
-    return {x:32*x, y:32*y, width:width, height:height};
+
+function pickRandTexture(textures) {
+    return textures[Math.floor(Math.random()*textures.length)];
 }
+
+// function convertToGameCoords(x, y, width, height) {
+//     return {x:32*x, y:32*y, width:width, height:height};
+// }
 
