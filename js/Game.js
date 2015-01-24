@@ -195,7 +195,7 @@ function update() {
 }
 
 function waterPlatformCollision(waterfall, platform) {
-    if(waterfall.x - platform.x <= 16) {
+    if(waterfall.x - platform.x < 16) {
         waterfall.body.velocity.x = -20;
     } else {
         waterfall.body.velocity.x = 20;
