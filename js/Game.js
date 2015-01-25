@@ -3,6 +3,7 @@ var game = new Phaser.Game(800, 480, Phaser.AUTO, 'body', { preload: preload, cr
 var sfx = Phaser.Sound;
 
 var player;   // player 1
+var playerDead = false;
 var fairy;    // player 2
 var platforms;
 
@@ -86,7 +87,7 @@ function preload() {
     game.load.image('star', 'assets/images/star.png');
     game.load.image('waterDroplet', 'assets/images/water3.png');
     game.load.image('waterDroplet', 'assets/images/waterDroplet.png');
-    game.load.image('fire', 'assets/images/fireParticle.png');
+    game.load.spritesheet('fire', 'assets/images/fireParticle.png', 4, 4    );
     game.load.spritesheet('dust', 'assets/images/fairydust.png', 16, 16);
     game.load.spritesheet('fairy', 'assets/images/fairysheet.png', 32, 32);
 
@@ -222,7 +223,13 @@ function create() {
  
 
 function update() {
-	game.physics.arcade.collide(player, platforms);
+    if(!playerDead){
+        game.physics.arcade.collide(player, platforms);
+        fires.forEach(function(fire) {
+            game.physics.arcade.collide(player, fire, playerFireCollision);
+        }, this);
+    }
+	
     game.physics.arcade.collide(fairy, platforms);
     game.physics.arcade.collide(linePhysicsBody, waterfalls);
 
@@ -278,9 +285,9 @@ function update() {
        waterfalls.forEach(function(waterfall) {
          game.physics.arcade.collide(invisibleBody, waterfall, waterLineCollision, null, this);
         }, this);
-        // fakeWaterfalls.forEach(function(fakeWaterfall) {
-        //  game.physics.arcade.collide(invisibleBody, fakeWaterfall, fakeWaterLineCollision, null, this);
-        // }, this);
+        fakeWaterfalls.forEach(function(fakeWaterfall) {
+         game.physics.arcade.collide(invisibleBody, fakeWaterfall, fakeWaterLineCollision, null, this);
+        }, this);
     }, this);
 
     waterfalls.forEach(function(waterfall) {
@@ -289,9 +296,7 @@ function update() {
    }, this);
 
 
-    // fires.forEach(function(fire) {
-    //     game.physics.arcade.collide(player, fire, playerFireCollision);
-    // }, this);
+    
 
     // waterfalls.forEach(function(waterfall) {
     //     fires.forEach(function(fire) {
@@ -325,7 +330,10 @@ function fairyDustCollision(fairy, linePhysicsBody){
 }
 
 function playerFireCollision(player, fire) {
-    player.body.velocity.y = -20;
+    player.body.bounce.y = 0.7;
+    playerDead=true;
+
+
 }
 
 function playerWaterCollision(player, waterfall) {
@@ -344,7 +352,8 @@ function fireWaterCollision(fakeWaterfall, fireBox) {
 
     fakeWaterfalls.destroy();
     fires.destroy();
-    fireBox.destroy();
+    // fireBox.destroy();
+    // fireBox.kill();
 }
 
 function waterLineCollision(invisibleBody, waterfall){
@@ -359,7 +368,7 @@ function waterLineCollision(invisibleBody, waterfall){
 
 function fakeWaterLineCollision(invisbleBody, fakeWaterfall){
     fakeWaterfall.body.velocity.y = -20;
-    if(fakeWaterfall.x - invisibleBody.x < 16) {
+    if(fakeWaterfall.x - invisbleBody.x < 16) {
         fakeWaterfall.body.velocity.x = -150;
     } else {
         fakeWaterfall.body.velocity.x = 150;
@@ -392,8 +401,8 @@ function updateLine() {
 
             var fairyDust = fairyDustGroup.create(x, y, '');
             
-            fairyDust.animations.add('twinkle', [0, 1, 2, 3], 2, true);
-            fairyDust.animations.play('twinkle');
+            // fairyDust.animations.add('twinkle', [0, 1, 2, 3], 2, true);
+            // fairyDust.animations.play('twinkle');
             var invisibleBody = linePhysicsBody.create(x, y, '');
             invisibleBody.scale.x = .5;
             invisibleBody.scale.y = .5;
