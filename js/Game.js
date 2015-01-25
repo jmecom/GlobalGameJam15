@@ -1,5 +1,7 @@
 var game = new Phaser.Game(800, 480, Phaser.AUTO, 'body', { preload: preload, create: create, update: update });
 
+var sfx = Phaser.Sound;
+
 var player;   // player 1
 var fairy;    // player 2
 var platforms;
@@ -7,6 +9,9 @@ var platforms;
 // Groups for particle emitters
 var waterfalls;
 var fires;
+//groups for fairy things
+var linePhysicsBody;
+var fairyDustGroup;
 
 var waterFireCount = 0;
 var waterfallBox, waterfallBox2;
@@ -22,10 +27,17 @@ var boulderTextures = [];
 var boulderGrassTextures = [];
 
 var bmd;       // line graphic
-var lineCoords = []; // line x,y coords
-var linePhysicsBody;
+// var lineCoords = []; // line x,y coords
+
 
 document.addEventListener('mousedown', onDocumentMouseDown, false);
+
+//counts the number of checks between placements of hidden fairy physics blocks
+var fairyCounter = 0;
+var fairyPrevX;
+var fairyPrevY;
+var dist = 0;
+var dustSize = 0;
 
 // 0 = blank
 // 1 = platform top
@@ -48,12 +60,13 @@ var levelOnePlatforms =
 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5],
 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	[1, 1, 1, 1, 1, 1, 1, 0, 0, 3, 3, 0, 0, 4, 4, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
-	[2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 2, 2, 2, 2, 2, 2]
+	[1, 1, 1, 1, 1, 1, 0, 0, 0, 3, 3, 0, 0, 4, 4, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+	[2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 2, 2, 2, 2, 2, 2]
 ];
  
 
 function preload() {
+    game.load.audio('sfx', ['assets/naturesounds.mp3']);
 	game.load.spritesheet('girl', 'assets/images/girlSprite.png', 32, 64);
 	game.load.image('boulder1', 'assets/images/boulder1.png');
 	game.load.image('boulder2', 'assets/images/boulder2.png');
@@ -74,6 +87,7 @@ function preload() {
     game.load.image('waterDroplet', 'assets/images/water3.png');
     game.load.image('waterDroplet', 'assets/images/waterDroplet.png');
     game.load.image('fire', 'assets/images/fireParticle.png');
+    game.load.spritesheet('dust', 'assets/images/fairydust.png', 16, 16);
     game.load.spritesheet('fairy', 'assets/images/fairysheet.png', 32, 32);
 
     dirtTextures.push('dirt1');
@@ -95,6 +109,8 @@ function preload() {
 
 function create() {
     //game.physics.startSystem(Phaser.Physics.ARCADE); 
+    sfx = game.add.audio('sfx');
+    sfx.play('');
 
     game.add.sprite(0, 0, 'bg');
 
@@ -103,8 +119,10 @@ function create() {
 
     waterfalls = game.add.group();
     // waterfall physics?
+    fairyDustGroup = game.add.group();
     fires = game.add.group();
     linePhysicsBody = game.add.group();
+    linePhysicsBody.enableBody = true;
    
     for (var col = 0; col < 25; col++) {
         for (var row = 0 ; row < 15; row++) {
@@ -141,6 +159,8 @@ function create() {
     fairy = game.add.sprite(32, game.world.height - 100, 'fairy');
     game.physics.arcade.enable(fairy);
     game.physics.arcade.enable(player);
+    game.physics.arcade.enable(linePhysicsBody);
+
 
     // Player physics properties. Give the little guy a slight bounce.
     player.body.bounce.y = 0.3;
@@ -192,7 +212,7 @@ function create() {
     fires.add(createFire(672, 288, 64, 200));    
 
     // Fire hit box
-    fireBox = game.add.sprite(545 - 32, 288);
+    fireBox = game.add.sprite(672 - 32, 288);
     game.physics.arcade.enable(fireBox);
     fireBox.renderable = false;
     fireBox.scale.x = 65;
@@ -204,6 +224,7 @@ function create() {
 function update() {
 	game.physics.arcade.collide(player, platforms);
     game.physics.arcade.collide(fairy, platforms);
+    game.physics.arcade.collide(linePhysicsBody, waterfalls);
 
 	cursors = game.input.keyboard.createCursorKeys();
 
@@ -246,22 +267,27 @@ function update() {
         player.body.velocity.y = -350;
     }
 
-    game.physics.arcade.collide(player, waterfallBox, playerWaterBoxCollision);
-    game.physics.arcade.collide(player, waterfallBox2, playerWaterBoxCollision);
+    // game.physics.arcade.collide(player, waterfallBox, playerWaterBoxCollision);
+    // game.physics.arcade.collide(player, waterfallBox2, playerWaterBoxCollision);
 
     fakeWaterfalls.forEach(function(fakeWaterfall) {
         game.physics.arcade.collide(fakeWaterfall, fireBox, fireWaterCollision);
     }, this);
 
-    //waterfalls.forEach(function(waterfall) {
-    //    game.physics.arcade.collide(player, waterfall, playerWaterCollision);
-     //   game.physics.arcade.collide(waterfall, platforms, waterPlatformCollision, null, this);
-        
-        // fires.forEach(function(fire) {
-        //      game.physics.arcade.collide(waterfall, fires, fireWaterCollision, null, this);
+    linePhysicsBody.forEach(function(invisibleBody){
+       waterfalls.forEach(function(waterfall) {
+         game.physics.arcade.collide(invisibleBody, waterfall, waterLineCollision, null, this);
+        }, this);
+        // fakeWaterfalls.forEach(function(fakeWaterfall) {
+        //  game.physics.arcade.collide(invisibleBody, fakeWaterfall, fakeWaterLineCollision, null, this);
         // }, this);
+    }, this);
+
+    waterfalls.forEach(function(waterfall) {
+       game.physics.arcade.collide(player, waterfall, playerWaterCollision);
     
-   //}, this);
+   }, this);
+
 
     // fires.forEach(function(fire) {
     //     game.physics.arcade.collide(player, fire, playerFireCollision);
@@ -281,9 +307,9 @@ function update() {
     // updateFires();  
 }
 
-function playerWaterBoxCollision(player, waterfallBox) {
-    player.body.velocity.x = 0;
-}
+// function playerWaterBoxCollision(player, waterfallBox) {
+//     player.body.velocity.x = 0;
+// }
 
 function waterPlatformCollision(waterfall, platform) {
     if(waterfall.x - platform.x < 16) {
@@ -294,13 +320,18 @@ function waterPlatformCollision(waterfall, platform) {
 
 }
 
+function fairyDustCollision(fairy, linePhysicsBody){
+    fairy.body.velocity.setTo(0,0);
+}
+
 function playerFireCollision(player, fire) {
     player.body.velocity.y = -20;
 }
 
-function playerWaterCollision(player, group) {
+function playerWaterCollision(player, waterfall) {
     player.body.velocity.x = 0;
-    player.x -= 10;
+    player.body.velocity.y += 10;
+
 }
 
 function fireWaterCollision(fakeWaterfall, fireBox) {
@@ -311,43 +342,100 @@ function fireWaterCollision(fakeWaterfall, fireBox) {
     //     fireBox.destroy();
     // }
 
-    fakeWaterfalls.destroy;
+    fakeWaterfalls.destroy();
     fires.destroy();
     fireBox.destroy();
 }
 
+function waterLineCollision(invisibleBody, waterfall){
+    waterfall.body.velocity.y = -20;
+    if(waterfall.x - invisibleBody.x < 16) {
+        waterfall.body.velocity.x = -150;
+    } else {
+        waterfall.body.velocity.x = 150;
+    }
+    waterfall.gravity = 100;
+}
+
+function fakeWaterLineCollision(invisbleBody, fakeWaterfall){
+    fakeWaterfall.body.velocity.y = -20;
+    if(fakeWaterfall.x - invisibleBody.x < 16) {
+        fakeWaterfall.body.velocity.x = -150;
+    } else {
+        fakeWaterfall.body.velocity.x = 150;
+    }
+    fakeWaterfall.gravity = 100;
+}
+
 function updateLine() {     
     var x = fairy.body.x;
-    var y = fairy.body.y;
-
+    var y = fairy.body.y; 
+    
     if (game.input.mousePointer.isDown) {
     	if(!mouseWasDown) {
-    		
+            fairyDustGroup.destroy(true, true);
+            linePhysicsBody.destroy(true, true);
+            dustSize=0;
+            fairyPrevX = x;
+            fairyPrevY = y;
+
     		bmd.clear();
     		// bmd.update(0, 0, 800, 480);
 
     		bmd = game.add.bitmapData(800, 480);
-   		    bmdLineSprite = game.add.sprite(0, 0, bmd); 
+   		       bmdLineSprite = game.add.sprite(0, 0, bmd); 
 
     		bmd.ctx.beginPath();
     	    bmd.ctx.strokeStyle = "white";
 
-	        // bmd.ctx.lineTo(game.input.x, game.input.y);
             bmd.ctx.lineTo(x, y);
-            var invisLinePlatform = linePhysicsBody.create(x, y, 'waterDroplet');
-            lineCoords.push({x:x, y:y}); // add x,y coord to line data array
+
+            var fairyDust = fairyDustGroup.create(x, y, '');
+            
+            fairyDust.animations.add('twinkle', [0, 1, 2, 3], 2, true);
+            fairyDust.animations.play('twinkle');
+            var invisibleBody = linePhysicsBody.create(x, y, '');
+            invisibleBody.scale.x = .5;
+            invisibleBody.scale.y = .5;
+            invisibleBody.body.immovable = true;
+
+            // lineCoords.push({x:x, y:y}); // add x,y coord to line data array
 	        bmd.ctx.lineWidth = 2;
 	        bmd.ctx.stroke();
 	        bmd.dirty = true;
+
 	        mouseWasDown = true;
-        } else {	
+        } else if(dustSize>10) {
+        } else if(x != fairyPrevX || y != fairyPrevY) {
+
  		    bmd.ctx.lineTo(x, y);
-            lineCoords.push({x:x, y:y});
-            var invisLinePlatform = linePhysicsBody.create(x, y, 'waterDroplet');
+            // lineCoords.push({x:x, y:y});
+           
+            dist = dist + Math.abs(x - fairyPrevX) + Math.abs(y - fairyPrevY);
+            
+            fairyPrevX = x;
+            fairyPrevY = y;
+             
+            if (dist < 16){
+                // do nothing
+                // fairyCounter++;
+            } else {
+                var invisibleBody = linePhysicsBody.create(x, y, '');
+                invisibleBody.scale.x = .5;
+                invisibleBody.scale.y = .5;
+                invisibleBody.body.immovable = true;
+
+                var fairyDust = fairyDustGroup.create(x, y, '');
+                // fairyDust.animations.add('twinkle', shuffleArray([0, 1, 2, 3]), 2, true);
+                // fairyDust.animations.play('twinkle');
+                // fairyCounter = 0;
+                dist = 0;
+                dustSize++;
+           }
 	        bmd.ctx.lineWidth = 2;
 	        bmd.ctx.stroke();
 	        bmd.dirty = true;
-        }
+        } 
     }  
 
     bmd.render(); // display line graphic
@@ -357,7 +445,7 @@ function updateLine() {
 function createFakeWaterfall(x, y, width, maxParticles) {
     var waterfall = game.add.emitter(x, y, 10);
     waterfall.width = width;
-    waterfall.gravity = 20;
+    waterfall.gravity = 100;
 
     waterfall.makeParticles('');
     waterfall.renderable = false;
@@ -406,9 +494,8 @@ function createFire(x, y, width, maxParticles) {
 
 
 function moveFairy() {
-
     var distance = Math.abs(game.input.x-fairy.body.x)+Math.abs(game.input.y-fairy.body.y);
-    var speed = Math.max(80,2*distance);
+    var speed = Math.min(200, Math.max(80,2*distance));
     game.physics.arcade.moveToPointer(fairy, speed);
     // Stop moving when fairy reaches mouse
     
@@ -453,5 +540,20 @@ function onDocumentMouseDown(event) {
 
 function pickRandTexture(textures) {
     return textures[Math.floor(Math.random()*textures.length)];
+}
+
+
+/**
+ * Randomize array element order in-place.
+ * Using Fisher-Yates shuffle algorithm.
+ */
+function shuffleArray(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+    return array;
 }
 
