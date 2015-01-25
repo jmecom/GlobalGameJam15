@@ -2,13 +2,14 @@
 
 Playable here: http://jmecom.github.io/GlobalGameJam15/
 
-(we didn't have time to get state transitions working, so when you reach the treasure, just load the next level).
-
 <h3>Instructions:</h3>
 
 Playable with 1 or 2 players.
 
 To play, Player1 controls the character Laura with the arrow keys and the other player controls the fairy with the mouse. The fairy can draw a line on the screen that catches and redirects the water. The fairy can hold and transport fire and use it to burn own obstacles. Work together to navigate the Kells! Have fun!
+
+(we didn't have time to get state transitions working, so when you reach the treasure, just load the next level).
+
 
 <h3>Controls:</h3>
 
