@@ -8,7 +8,9 @@ var waterfalls;
 var fires;
 
 var waterFireCount = 0;
-
+var waterfallBox, waterfallBox2;
+var fireBox;
+var fakeWaterfalls;
 
 // Direction the girl is facing
 var direction = 'left';
@@ -66,8 +68,8 @@ function preload() {
 	game.load.image('bg', 'assets/images/bg.png');
     game.load.image('ground', 'assets/images/platform.png');
     game.load.image('star', 'assets/images/star.png');
-    game.load.image('waterDroplet', 'assets/images/waterDroplet.png');
-    game.load.image('fire', 'assets/images/fireParticle.png');
+    game.load.image('waterDroplet', 'assets/images/water3.png');
+    game.load.spritesheet('fire', 'assets/images/fireParticle.png', 4, 4);
     //game.load.spritesheet('dude', 'assets/images/dude.png', 32, 64);
 
     dirtTextures.push('dirt1');
@@ -99,7 +101,7 @@ function create() {
     // waterfall physics?
     fires = game.add.group();
    
-   for (var col = 0; col < 25; col++) {
+    for (var col = 0; col < 25; col++) {
         for (var row = 0 ; row < 15; row++) {
             // Top level
             if (levelOnePlatforms[row][col] == 1) {
@@ -134,7 +136,7 @@ function create() {
     game.physics.arcade.enable(player);
 
     // Player physics properties. Give the little guy a slight bounce.
-    player.body.bounce.y = 0.2;
+    player.body.bounce.y = 0.3;
     player.body.gravity.y = 800;
     //player.body.collideWorldBounds = true;
 
@@ -149,19 +151,43 @@ function create() {
     bmd.ctx.beginPath();
     bmd.ctx.strokeStyle += "white";
 
-    // Left waterfall, using layers for multiple particles
-    waterfalls.add(createWaterfall(336, 64, 160, 400));	
-    // waterfalls.add(createWaterfall(336, 0, 160, 400));
-    // waterfalls.add(createWaterfall(336, 0, 160, 400));
+    // Left waterfall
+    waterfalls.add(createWaterfall(336, 64, 160, 200));	
 
-    // Right waterfall, using layers for multiple particles
-    waterfalls.add(createWaterfall(545, 64, 128, 400));	
-    // waterfalls.add(createWaterfall(504, 0, 140, 400));
-    // waterfalls.add(createWaterfall(504, 0, 140, 400));
+    // Right waterfall
+    waterfalls.add(createWaterfall(545, 64, 128, 200));	
 
-    // Fire particle emitters 
-    fires.add(createFire(665, 288, 32, 100));
-    fires.add(createFire(688, 288, 32, 100));    
+    // Invisible waterfall to detect collisions
+    fakeWaterfalls = game.add.group();
+    fakeWaterfalls.add(createFakeWaterfall(336, 64, 160, 50));
+    fakeWaterfalls.add(createFakeWaterfall(545, 64, 128, 50));
+
+    // waterfall hit box
+    waterfallBox = game.add.sprite(336 -80, 64);
+    game.physics.arcade.enable(waterfallBox);
+    waterfallBox.renderable = false;
+    waterfallBox.scale.x = 160;
+    waterfallBox.scale.y = game.world.height - 64;
+    waterfallBox.body.immovable = true; 
+    
+    waterfallBox2 = game.add.sprite(545-80, 64);
+    game.physics.arcade.enable(waterfallBox2);
+    waterfallBox2.renderable = false;
+    waterfallBox2.scale.x = 128;
+    waterfallBox2.scale.y = game.world.height - 64;
+    waterfallBox2.body.immovable = true; 
+
+    // // Fire particle emitters 
+    // fires.add(createFire(665, 288, 32, 100));
+    fires.add(createFire(672, 288, 64, 200));    
+
+    // Fire hit box
+    fireBox = game.add.sprite(545 - 32, 288);
+    game.physics.arcade.enable(fireBox);
+    fireBox.renderable = false;
+    fireBox.scale.x = 65;
+    fireBox.scale.y = 32;
+    fireBox.body.immovable = true; 
 }
  
 
@@ -201,20 +227,34 @@ function update() {
         	player.frame = 4;
         } else if(direction == 'right') {
         	player.frame = 9;
-        }
-        
+        }   
     }
     
     // Allow the player to jump if they are touching the ground.
     if (cursors.up.isDown && player.body.touching.down) {
-        player.body.velocity.y = -330;
+        player.body.velocity.y = -350;
     }
 
-    waterfalls.forEach(function(waterfall) {
-        game.physics.arcade.collide(player, waterfall, playerWaterCollision);
-        game.physics.arcade.collide(waterfall, platforms, waterPlatformCollision, null, this);
+    game.physics.arcade.collide(player, waterfallBox, playerWaterBoxCollision);
+    game.physics.arcade.collide(player, waterfallBox2, playerWaterBoxCollision);
+
+    fakeWaterfalls.forEach(function(fakeWaterfall) {
+        game.physics.arcade.collide(fakeWaterfall, fireBox, fireWaterCollision);
     }, this);
 
+    //waterfalls.forEach(function(waterfall) {
+    //    game.physics.arcade.collide(player, waterfall, playerWaterCollision);
+     //   game.physics.arcade.collide(waterfall, platforms, waterPlatformCollision, null, this);
+        
+        // fires.forEach(function(fire) {
+        //      game.physics.arcade.collide(waterfall, fires, fireWaterCollision, null, this);
+        // }, this);
+    
+   //}, this);
+
+    // fires.forEach(function(fire) {
+    //     game.physics.arcade.collide(player, fire, playerFireCollision);
+    // }, this);
 
     // waterfalls.forEach(function(waterfall) {
     //     fires.forEach(function(fire) {
@@ -229,6 +269,10 @@ function update() {
     // updateFires();  
 }
 
+function playerWaterBoxCollision(player, waterfallBox) {
+    player.body.velocity.x = 0;
+}
+
 function waterPlatformCollision(waterfall, platform) {
     if(waterfall.x - platform.x < 16) {
         waterfall.body.velocity.x = -20;
@@ -238,19 +282,26 @@ function waterPlatformCollision(waterfall, platform) {
 
 }
 
-function playerWaterCollision(player, group) {
-    player.body.velocity.x = 0;
+function playerFireCollision(player, fire) {
+    player.body.velocity.y = -20;
 }
 
-function fireWaterCollision(waterfall, fire) {
-    waterfall.kill();
-    fire.kill();
+function playerWaterCollision(player, group) {
+    player.body.velocity.x = 0;
+    player.x -= 10;
+}
 
-    waterFireCount++;
+function fireWaterCollision(fakeWaterfall, fireBox) {
+    // waterFireCount++;
 
-    if(waterFireCount > 20) {
-        fires.destroy();
-    }
+    // if(waterFireCount > 20) {
+    //     fires.destroy();
+    //     fireBox.destroy();
+    // }
+
+    fakeWaterfalls.destroy;
+    fires.destroy();
+    fireBox.destroy();
 }
 
 function updateLine() {     
@@ -282,6 +333,19 @@ function updateLine() {
     bmd.render();
 }
 
+function createFakeWaterfall(x, y, width, maxParticles) {
+    var waterfall = game.add.emitter(x, y, 10);
+    waterfall.width = width;
+    waterfall.gravity = 20;
+
+    waterfall.makeParticles('');
+    waterfall.renderable = false;
+
+    waterfall.setXSpeed(0, 0);  
+    waterfall.setYSpeed(190,200);
+    waterfall.start(false, 2000, .1, false);
+    return waterfall;
+}
 
 function createWaterfall(x, y, width, maxParticles) {
     var waterfall = game.add.emitter(x, y, 1);
@@ -298,7 +362,7 @@ function createWaterfall(x, y, width, maxParticles) {
     // leftWaterfall.maxParticleScale = 0.5;
 
     waterfall.setXSpeed(0, 0);  
-    waterfall.setYSpeed(60, 100);
+    waterfall.setYSpeed(10, 200);
     waterfall.start(false, 5000, .2, false);
     return waterfall;
 }
