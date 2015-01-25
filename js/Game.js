@@ -1,6 +1,7 @@
 var game = new Phaser.Game(800, 480, Phaser.AUTO, 'body', { preload: preload, create: create, update: update });
 
-var player;
+var player;   // player 1
+var fairy;    // player 2
 var platforms;
 
 // Groups for particle emitters
@@ -16,7 +17,9 @@ var dirtGrassTextures = [];
 var boulderTextures = [];
 var boulderGrassTextures = [];
 
-var bmd; // line
+var bmd;       // line graphic
+var lineCoords = []; // line x,y coords
+var linePhysicsBody;
 
 document.addEventListener('mousedown', onDocumentMouseDown, false);
 
@@ -66,7 +69,7 @@ function preload() {
     game.load.image('star', 'assets/images/star.png');
     game.load.image('waterDroplet', 'assets/images/waterDroplet.png');
     game.load.image('fire', 'assets/images/fireParticle.png');
-    //game.load.spritesheet('dude', 'assets/images/dude.png', 32, 64);
+    game.load.spritesheet('fairy', 'assets/images/fairysheet.png', 32, 32);
 
     dirtTextures.push('dirt1');
     dirtTextures.push('dirt2');
@@ -96,6 +99,7 @@ function create() {
     waterfalls = game.add.group();
     // waterfall physics?
     fires = game.add.group();
+    linePhysicsBody = game.add.group();
    
    for (var col = 0; col < 25; col++) {
         for (var row = 0 ; row < 15; row++) {
@@ -127,8 +131,10 @@ function create() {
         }
     }
 
-    // The player and its settings
+    // The players and its settings
     player = game.add.sprite(32, game.world.height - 150, 'girl');
+    fairy = game.add.sprite(32, game.world.height - 100, 'fairy');
+    game.physics.arcade.enable(fairy);
     game.physics.arcade.enable(player);
 
     // Player physics properties. Give the little guy a slight bounce.
@@ -139,6 +145,9 @@ function create() {
     // Our two animations, walking left and right.
     player.animations.add('left', [0, 1, 2, 3], 8, true);
     player.animations.add('right', [5, 6, 7, 8], 8, true);
+    fairy.animations.add('fairyLeft', [0, 1, 2, 3], 8, true);
+    fairy.animations.add('fairyRight', [4, 5, 6, 7], 8, true);
+    fairy.body.collideWorldBounds = true;
      
     // Set up the line
     bmd = game.add.bitmapData(800, 480);
@@ -165,6 +174,7 @@ function create() {
 
 function update() {
 	game.physics.arcade.collide(player, platforms);
+    game.physics.arcade.collide(fairy, platforms);
 	cursors = game.input.keyboard.createCursorKeys();
 
     // Reset the players velocity (movement)
@@ -189,7 +199,6 @@ function update() {
         } else if(direction == 'right') {
         	player.frame = 9;
         }
-        
     }
     
     // Allow the player to jump if they are touching the ground.
@@ -198,12 +207,16 @@ function update() {
     }
     
     updateLine();
-    updateWaterfalls();  
+    updateWaterfalls();
+    moveFairy();  
     // updateFires();  
 }
 
 
 function updateLine() {     
+    var x = fairy.body.x;
+    var y = fairy.body.y;
+
     if (game.input.mousePointer.isDown) {
     	if(!mouseWasDown) {
     		
@@ -216,20 +229,26 @@ function updateLine() {
     		bmd.ctx.beginPath();
     	    bmd.ctx.strokeStyle = "white";
 
-	        bmd.ctx.lineTo(game.input.x, game.input.y);
+	        // bmd.ctx.lineTo(game.input.x, game.input.y);
+            bmd.ctx.lineTo(x, y);
+            var invisLinePlatform = linePhysicsBody.create(x, y, 'waterDroplet');
+            lineCoords.push({x:x, y:y}); // add x,y coord to line data array
 	        bmd.ctx.lineWidth = 2;
 	        bmd.ctx.stroke();
 	        bmd.dirty = true;
 	        mouseWasDown = true;
         } else {	
- 		    bmd.ctx.lineTo(game.input.x, game.input.y);
-
+ 		    bmd.ctx.lineTo(x, y);
+            lineCoords.push({x:x, y:y});
+            var invisLinePlatform = linePhysicsBody.create(x, y, 'waterDroplet');
 	        bmd.ctx.lineWidth = 2;
 	        bmd.ctx.stroke();
 	        bmd.dirty = true;
         }
     }  
-    bmd.render();
+
+    bmd.render(); // display line graphic
+    
 }
 
 
@@ -259,19 +278,44 @@ function createFire(x, y, width, maxParticles) {
 }
 
 
+function moveFairy() {
+
+    var distance = Math.abs(game.input.x-fairy.body.x)+Math.abs(game.input.y-fairy.body.y);
+    var speed = Math.max(80,2*distance);
+    game.physics.arcade.moveToPointer(fairy, speed);
+    // Stop moving when fairy reaches mouse
+    
+    if (distance<20) {
+        fairy.body.velocity.setTo(0, 0);
+    }
+
+    if (fairy.body.velocity.x == 0) {
+        // do nothing
+    } else if (fairy.body.velocity.x < 0) {
+        // fairy.body.velocity.x = -150;
+        fairy.animations.play('fairyLeft');
+        // prevFairyDir = 'fairyLeft'; 
+    } else {
+        // player.body.velocity.x = 150;
+        fairy.animations.play('fairyRight');
+        // prevFairyDir = 'right';
+    }
+}
+
+
 function updateWaterfalls() {
 	waterfalls.forEach(function(waterfall) {
     	waterfall.makeParticles('waterDroplet', 1);
     }, this);
 }
 
-function updateFires() {
-	fires.forEach(function(fire) {
-		var texture = pickRandTexture(fireTextures);
-		console.log(texture);
-    	fire.makeParticles(texture, 100);
-    }, this);
-}
+// function updateFires() {
+// 	fires.forEach(function(fire) {
+// 		var texture = pickRandTexture(fireTextures);
+// 		console.log(texture);
+//     	fire.makeParticles(texture, 100);
+//     }, this);
+// }
 
 
 function onDocumentMouseDown(event) {
@@ -283,41 +327,4 @@ function onDocumentMouseDown(event) {
 function pickRandTexture(textures) {
     return textures[Math.floor(Math.random()*textures.length)];
 }
-
-function calcStraightLine (startCoordinates, endCoordinates) {
-    var coordinatesArray = new Array();
-    // Translate coordinates
-    var x1 = startCoordinates.left;
-    var y1 = startCoordinates.top;
-    var x2 = endCoordinates.left;
-    var y2 = endCoordinates.top;
-    // Define differences and error check
-    var dx = Math.abs(x2 - x1);
-    var dy = Math.abs(y2 - y1);
-    var sx = (x1 < x2) ? 1 : -1;
-    var sy = (y1 < y2) ? 1 : -1;
-    var err = dx - dy;
-    // Set first coordinates
-    coordinatesArray.push(new Coordinates(y1, x1));
-    // Main loop
-    while (!((x1 == x2) && (y1 == y2))) {
-      var e2 = err << 1;
-      if (e2 > -dy) {
-        err -= dy;
-        x1 += sx;
-      }
-      if (e2 < dx) {
-        err += dx;
-        y1 += sy;
-      }
-      // Set coordinates
-      coordinatesArray.push(new Coordinates(y1, x1));
-    }
-    // Return the result
-    return coordinatesArray;
-}
-
-// function convertToGameCoords(x, y, width, height) {
-//     return {x:32*x, y:32*y, width:width, height:height};
-// }
 
