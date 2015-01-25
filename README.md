@@ -16,6 +16,7 @@ http://globalgamejam.org/2015/games/fae
 Credits: 
 
 <b>Programming</b>
+
 Jordan Mecom and Will Hardy
 
 Shyamolee Desai
@@ -26,6 +27,7 @@ Alice Wang
 
 
 <b>Art and Sound</b> 
+
 Declan Mckelvey-Hembree
 
 Shyamolee Desai
@@ -35,6 +37,7 @@ Alice Wang
 Steph Waldo
 
 <b>Design</b>
+
 Declan Mckelvey-Hembree
 
 Alice Wang
