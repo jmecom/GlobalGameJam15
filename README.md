@@ -48,4 +48,4 @@ Declan Mckelvey-Hembree
 Alice Wang
 
 -----------------------------
-Note: this was made in < 48 hours, so the code's messy. We may refactor this project and add some more levels in the future.
+Disclaimer: this was made in < 48 hours, so the code's messy. Don't use this project as a starter for your own Phaser game!
